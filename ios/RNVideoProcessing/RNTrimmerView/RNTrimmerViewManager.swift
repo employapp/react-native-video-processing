@@ -11,4 +11,8 @@ class RNTrimmerViewManager: RCTViewManager {
     @objc override func view() -> UIView! {
         return RNTrimmerView(frame: CGRect.zero, bridge: self.bridge)
     }
+
+    override class func requiresMainQueueSetup() -> Bool {
+      return true
+    }
 }
