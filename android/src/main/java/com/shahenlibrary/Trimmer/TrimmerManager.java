@@ -26,7 +26,6 @@ package com.shahenlibrary.Trimmer;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -77,6 +76,12 @@ public class TrimmerManager extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void scale(String path, ReadableMap options, Promise promise) {
+    Log.d(REACT_PACKAGE, "scale video: " + options.toString());
+    Trimmer.scale(path, options, promise, null, null, reactContext);
+  }
+
+  @ReactMethod
   public void getPreviewImageAtPosition(ReadableMap options, Promise promise) {
     String source = options.getString("source");
     double sec = options.hasKey("second") ? options.getDouble("second") : 0;
@@ -99,12 +104,6 @@ public class TrimmerManager extends ReactContextBaseJavaModule {
   public void reverse(String path, Promise promise) {
     Log.d(REACT_PACKAGE, "reverse video: " + path);
     Trimmer.reverse(path, promise, reactContext);
-  }
-
-  @ReactMethod
-  public void merge(ReadableArray videoFiles, String cmd, Promise promise) {
-    Log.d(REACT_PACKAGE, "Sending command: " + cmd);
-    Trimmer.merge(videoFiles, cmd, promise, reactContext);
   }
 
   @ReactMethod

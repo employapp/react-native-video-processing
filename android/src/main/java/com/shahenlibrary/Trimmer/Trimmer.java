@@ -34,7 +34,6 @@ import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
 
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -71,6 +70,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.util.Formatter;
 
+import com.shahenlibrary.videoprocessor.VideoProcessor;
+
 
 public class Trimmer {
 
@@ -85,12 +86,12 @@ public class Trimmer {
   private static class FfmpegCmdAsyncTaskParams {
     ArrayList<String> cmd;
     final String pathToProcessingFile;
-    Context ctx;
+    ReactApplicationContext ctx;
     final Promise promise;
     final String errorMessageTitle;
     final OnCompressVideoListener cb;
 
-    FfmpegCmdAsyncTaskParams(ArrayList<String> cmd, final String pathToProcessingFile, Context ctx, final Promise promise, final String errorMessageTitle, final OnCompressVideoListener cb) {
+    FfmpegCmdAsyncTaskParams(ArrayList<String> cmd, final String pathToProcessingFile, ReactApplicationContext ctx, final Promise promise, final String errorMessageTitle, final OnCompressVideoListener cb) {
       this.cmd = cmd;
       this.pathToProcessingFile = pathToProcessingFile;
       this.ctx = ctx;
@@ -106,7 +107,7 @@ public class Trimmer {
     protected Void doInBackground(FfmpegCmdAsyncTaskParams... params) {
       ArrayList<String> cmd = params[0].cmd;
       final String pathToProcessingFile = params[0].pathToProcessingFile;
-      Context ctx = params[0].ctx;
+      ReactApplicationContext ctx = params[0].ctx;
       final Promise promise = params[0].promise;
       final String errorMessageTitle = params[0].errorMessageTitle;
       final OnCompressVideoListener cb = params[0].cb;
@@ -177,9 +178,9 @@ public class Trimmer {
 
 
   private static class LoadFfmpegAsyncTaskParams {
-    Context ctx;
+    ReactApplicationContext ctx;
 
-    LoadFfmpegAsyncTaskParams(Context ctx) {
+    LoadFfmpegAsyncTaskParams(ReactApplicationContext ctx) {
       this.ctx = ctx;
     }
   }
@@ -188,7 +189,7 @@ public class Trimmer {
 
     @Override
     protected Void doInBackground(LoadFfmpegAsyncTaskParams... params) {
-      Context ctx = params[0].ctx;
+      ReactApplicationContext ctx = params[0].ctx;
 
       // NOTE: 1. COPY "ffmpeg" FROM ASSETS TO /data/data/com.myapp...
       String filesDir = getFilesDirAbsolutePath(ctx);
@@ -260,7 +261,7 @@ public class Trimmer {
       int height = Integer.parseInt(retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
       int orientation = Integer.parseInt(retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
 
-      float aspectRatio = (float)width / (float)height;
+      float aspectRatio = width / height;
 
       int resizeWidth = 200;
       int resizeHeight = Math.round(resizeWidth / aspectRatio);
@@ -516,7 +517,7 @@ public class Trimmer {
     }
     cmd.add(tempFile.getPath());
 
-    executeFfmpegCommand(cmd, tempFile.getPath(), ctx, promise, "compress error", cb);
+    executeFfmpegCommand(cmd, tempFile.getPath(), rctx, promise, "compress error", cb);
   }
 
   static File createTempFile(String extension, final Promise promise, Context ctx) {
@@ -650,14 +651,14 @@ public class Trimmer {
     // 3. "-to" (END TIME) or "-t" (TRIM TIME)
     // OTHERWISE WE WILL LOSE ACCURACY AND WILL GET WRONG CLIPPED VIDEO
 
-    String startTime = options.hasKey("startTime") ? options.getString("startTime") : null;
-    if ( startTime != null ) {
+    String startTime = options.getString("startTime");
+    if ( !startTime.equals(null) && !startTime.equals("") ) {
       cmd.add("-ss");
       cmd.add(startTime);
     }
 
-    String endTime = options.hasKey("endTime") ? options.getString("endTime") : null;
-    if ( endTime != null ) {
+    String endTime = options.getString("endTime");
+    if ( !endTime.equals(null) && !endTime.equals("") ) {
       cmd.add("-to");
       cmd.add(endTime);
     }
@@ -740,51 +741,20 @@ public class Trimmer {
     executeFfmpegCommand(cmd, tempFile.getPath(), ctx, promise, "Reverse error", null);
   }
 
-  static void merge(ReadableArray videoFiles, String concatCmd, final Promise promise, ReactApplicationContext ctx) {
-    final File tempFile = createTempFile("mp4", promise, ctx);
-
-    Log.d(LOG_TAG, "Merging in progress.");
-
-    ArrayList<String> cmd = new ArrayList<String>();
-    cmd.add("-y"); // NOTE: OVERWRITE OUTPUT FILE
-
-    for (int i = 0; i < videoFiles.size(); i++) {
-      cmd.add("-i");
-      cmd.add(videoFiles.getString(i));
-    }
-
-    cmd.add("-filter_complex");
-    cmd.add(concatCmd);
-
-    cmd.add("-map");
-    cmd.add("[v]");
-
-    cmd.add("-preset");
-    cmd.add("ultrafast");
-
-    // NOTE: DO NOT CONVERT AUDIO TO SAVE TIME
-    cmd.add("-c:a");
-
-    cmd.add("copy");
-    cmd.add(tempFile.getPath());
-
-    executeFfmpegCommand(cmd, tempFile.getPath(), ctx, promise, "Merge error", null);
-  }
-
-  static private Void executeFfmpegCommand(@NonNull ArrayList<String> cmd, @NonNull final String pathToProcessingFile, @NonNull Context ctx, @NonNull final Promise promise, @NonNull final String errorMessageTitle, @Nullable final OnCompressVideoListener cb) {
+  static private Void executeFfmpegCommand(@NonNull ArrayList<String> cmd, @NonNull final String pathToProcessingFile, @NonNull ReactApplicationContext ctx, @NonNull final Promise promise, @NonNull final String errorMessageTitle, @Nullable final OnCompressVideoListener cb) {
     FfmpegCmdAsyncTaskParams ffmpegCmdAsyncTaskParams = new FfmpegCmdAsyncTaskParams(cmd, pathToProcessingFile, ctx, promise, errorMessageTitle, cb);
 
     FfmpegCmdAsyncTask ffmpegCmdAsyncTask = new FfmpegCmdAsyncTask();
-    ffmpegCmdAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR ,ffmpegCmdAsyncTaskParams);
+    ffmpegCmdAsyncTask.execute(ffmpegCmdAsyncTaskParams);
 
     return null;
   }
 
-  private static String getFilesDirAbsolutePath(Context ctx) {
+  private static String getFilesDirAbsolutePath(ReactApplicationContext ctx) {
     return ctx.getFilesDir().getAbsolutePath();
   }
 
-  private static String getFfmpegAbsolutePath(Context ctx) {
+  private static String getFfmpegAbsolutePath(ReactApplicationContext ctx) {
     return getFilesDirAbsolutePath(ctx) + File.separator + FFMPEG_FILE_NAME;
   }
 
@@ -822,10 +792,73 @@ public class Trimmer {
     LoadFfmpegAsyncTaskParams loadFfmpegAsyncTaskParams = new LoadFfmpegAsyncTaskParams(ctx);
 
     LoadFfmpegAsyncTask loadFfmpegAsyncTask = new LoadFfmpegAsyncTask();
-    loadFfmpegAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, loadFfmpegAsyncTaskParams);
+    loadFfmpegAsyncTask.execute(loadFfmpegAsyncTaskParams);
 
     // TODO: EXPOSE TO JS "isFfmpegLoaded" AND "isFfmpegLoading"
 
     return;
+  }
+
+  public static void scale(final String source, ReadableMap options, final Promise promise, final OnCompressVideoListener cb, ThemedReactContext tctx, ReactApplicationContext rctx) {
+    Log.d(LOG_TAG, "OPTIONS: " + options.toString());
+
+    final Context ctx = tctx != null ? tctx : rctx;
+
+    ReadableMap videoMetadata = getVideoRequiredMetadata(source, ctx);
+    int videoWidth = videoMetadata.getInt("width");
+    int videoHeight = videoMetadata.getInt("height");
+    int videoBitrate = videoMetadata.getInt("bitrate");
+
+    final int width = options.hasKey("width") ? (int)( options.getDouble("width") ) : 0;
+    final int height = options.hasKey("height") ? (int)( options.getDouble("height") ) : 0;
+
+    Double minimumBitrate = options.hasKey("minimumBitrate") ? options.getDouble("minimumBitrate") : null;
+    Double bitrateMultiplier = options.hasKey("bitrateMultiplier") ? options.getDouble("bitrateMultiplier") : 1.0;
+    Boolean removeAudio = options.hasKey("removeAudio") ? options.getBoolean("removeAudio") : false;
+
+    Double averageBitrate = videoBitrate / bitrateMultiplier;
+
+    if (minimumBitrate != null) {
+      if (averageBitrate < minimumBitrate) {
+        averageBitrate = minimumBitrate;
+      }
+      if (videoBitrate < minimumBitrate) {
+        averageBitrate = videoBitrate * 1.0;
+      }
+    }
+    final int bitrate = averageBitrate.intValue();
+
+    final File tempFile = createTempFile("mp4", promise, ctx);
+    final String tempFilePath = tempFile.getAbsolutePath();
+
+    final String filePath = source;
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                VideoProcessor.processor(ctx)
+                        .input(source)
+                        .output(tempFilePath)
+                        .outWidth(width)
+                        .outHeight(height)
+                        .bitrate(bitrate)
+                        .process();
+                if (cb != null) {
+                  cb.onSuccess(tempFile.getPath());
+                } else if (promise != null) {
+                  WritableMap event = Arguments.createMap();
+                  event.putString("source", tempFile.getPath());
+                  promise.resolve(event);
+                }
+            } catch (Exception e) {
+                if (cb != null) {
+                  cb.onError(e.toString());
+                } else if (promise != null) {
+                  promise.reject(e.toString());
+                }
+            }
+        }
+    }).start();
   }
 }
