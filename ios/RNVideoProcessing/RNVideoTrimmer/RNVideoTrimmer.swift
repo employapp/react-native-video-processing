@@ -26,7 +26,7 @@ class RNVideoTrimmer: NSObject {
   }
 
   @objc func getVideoOrientationFromAsset(asset : AVAsset) -> UIImage.Orientation {
-    let videoTrack: AVAssetTrack? = asset.tracks(withMediaType: .video)[0]
+    let videoTrack: AVAssetTrack? = asset.tracks(withMediaType: AVMediaTypeVideo)[0]
     let size = videoTrack!.naturalSize
 
     let txf: CGAffineTransform = videoTrack!.preferredTransform
@@ -133,11 +133,11 @@ class RNVideoTrimmer: NSObject {
     switch videoOrientation {
     case UIImageOrientation.up:
       t1 = CGAffineTransform(translationX: clipVideoTrack.naturalSize.height - cropOffsetX, y: 0 - cropOffsetY );
-      t2 = t1.rotated(by: CGFloat(M_PI_2) );
+      t2 = t1.rotated(by: CGFloat(Double.pi / 2) );
       break;
     case UIImageOrientation.left:
       t1 = CGAffineTransform(translationX: clipVideoTrack.naturalSize.width - cropOffsetX, y: clipVideoTrack.naturalSize.height - cropOffsetY );
-      t2 = t1.rotated(by: CGFloat(M_PI)  );
+      t2 = t1.rotated(by: CGFloat(Double.pi)  );
       break;
     case UIImageOrientation.right:
       t1 = CGAffineTransform(translationX: 0 - cropOffsetX, y: 0 - cropOffsetY );
@@ -145,7 +145,7 @@ class RNVideoTrimmer: NSObject {
       break;
     case UIImageOrientation.down:
       t1 = CGAffineTransform(translationX: 0 - cropOffsetX, y: clipVideoTrack.naturalSize.width - cropOffsetY ); // not fixed width is the real height in upside down
-      t2 = t1.rotated(by: -(CGFloat)(M_PI_2) );
+      t2 = t1.rotated(by: -(CGFloat)(Double.pi / 2) );
       break;
     default:
       NSLog("no supported orientation has been found in this video");
@@ -166,10 +166,10 @@ class RNVideoTrimmer: NSObject {
         callback( [NSNull(), outputURL] )
 
       case .failed:
-        callback( ["Failed: \(exportSession.error)", NSNull()] )
+        callback( ["Failed: \(String(describing: exportSession.error))", NSNull()] )
 
       case .cancelled:
-        callback( ["Cancelled: \(exportSession.error)", NSNull()] )
+        callback( ["Cancelled: \(String(describing: exportSession.error))", NSNull()] )
 
       default: break
       }
@@ -303,7 +303,7 @@ class RNVideoTrimmer: NSObject {
 
 //    print("RNVideoTrimmer passed quality: \(quality). useQuality: \(useQuality)")
 
-    AVUtilities.reverse(firstAsset, outputURL: outputURL, completion: { [unowned self] (reversedAsset: AVAsset) in
+    AVUtilities.reverse(firstAsset, outputURL: outputURL, completion: { (reversedAsset: AVAsset) in
 
 
       let secondAsset = reversedAsset
@@ -343,10 +343,10 @@ class RNVideoTrimmer: NSObject {
           callback( [NSNull(), finalURL.absoluteString] )
 
         case .failed:
-          callback( ["Failed: \(exportSession.error)", NSNull()] )
+          callback( ["Failed: \(String(describing: exportSession.error))", NSNull()] )
 
         case .cancelled:
-          callback( ["Cancelled: \(exportSession.error)", NSNull()] )
+          callback( ["Cancelled: \(String(describing: exportSession.error))", NSNull()] )
 
         default: break
         }
@@ -385,7 +385,7 @@ class RNVideoTrimmer: NSObject {
 
     print("RNVideoTrimmer passed quality: \(quality). useQuality: \(useQuality)")
 
-    AVUtilities.reverse(asset, outputURL: outputURL, completion: { [unowned self] (asset: AVAsset) in
+    AVUtilities.reverse(asset, outputURL: outputURL, completion: { (asset: AVAsset) in
       callback( [NSNull(), outputURL.absoluteString] )
     })
   }
@@ -482,10 +482,10 @@ class RNVideoTrimmer: NSObject {
                   UISaveVideoAtPathToSavedPhotosAlbum(outputURL.relativePath, self, nil, nil)
               }
           case .failed:
-              callback( ["Failed: \(compressionEncoder!.error)", NSNull()] )
+            callback( ["Failed: \(String(describing: compressionEncoder!.error))", NSNull()] )
 
           case .cancelled:
-              callback( ["Cancelled: \(compressionEncoder!.error)", NSNull()] )
+            callback( ["Cancelled: \(String(describing: compressionEncoder!.error))", NSNull()] )
 
           default: break
           }
@@ -579,7 +579,7 @@ class RNVideoTrimmer: NSObject {
   func getSourceURL(source: String) -> URL {
     var sourceURL: URL
     if source.contains("assets-library") {
-      sourceURL = NSURL(string: source) as! URL
+      sourceURL = NSURL(string: source)! as URL
     } else {
       let bundleUrl = Bundle.main.resourceURL!
       sourceURL = URL(string: source, relativeTo: bundleUrl)!
