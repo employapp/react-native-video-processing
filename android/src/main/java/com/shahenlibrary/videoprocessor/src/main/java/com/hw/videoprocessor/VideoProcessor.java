@@ -168,7 +168,8 @@ public class VideoProcessor {
         retriever.setDataSource(processor.input);
         int originWidth = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
         int originHeight = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-        int rotationValue = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
+        // NOTE: This is disabled due to our custom usage of this library. Find detailed reason below.
+        // int rotationValue = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
         int oriBitrate = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE));
         int durationMs = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
         retriever.release();
@@ -184,11 +185,16 @@ public class VideoProcessor {
         resultWidth = resultWidth % 2 == 0 ? resultWidth : resultWidth + 1;
         resultHeight = resultHeight % 2 == 0 ? resultHeight : resultHeight + 1;
 
-        if (rotationValue == 90 || rotationValue == 270) {
-            int temp = resultHeight;
-            resultHeight = resultWidth;
-            resultWidth = temp;
-        }
+        // NOTE: This is disabled due to our custom usage of this library.
+        //       This piece of code combined with the same height/width swap
+        //       code in Trimmer.java will cause a double swap, which
+        //       causes final result video to have wrong dimension.
+        //
+        // if (rotationValue == 90 || rotationValue == 270) {
+        //     int temp = resultHeight;
+        //     resultHeight = resultWidth;
+        //     resultWidth = temp;
+        // }
 
         MediaExtractor extractor = new MediaExtractor();
         extractor.setDataSource(processor.input);
