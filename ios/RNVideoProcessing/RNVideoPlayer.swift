@@ -34,7 +34,7 @@ class RNVideoPlayer: RCTView {
     var _replay: Bool = false
     var _rotate: Bool = false
     var isInitialized = false
-    var _resizeMode = AVLayerVideoGravityResizeAspect
+    var _resizeMode = AVLayerVideoGravity.resizeAspect
     var onChange: RCTBubblingEventBlock?
     
     let LOG_KEY: String = "VIDEO_PROCESSING"
@@ -68,7 +68,7 @@ class RNVideoPlayer: RCTView {
             if newValue == nil {
                 return
             }
-            self._resizeMode = newValue as! String
+            self._resizeMode = AVLayerVideoGravity(rawValue: newValue! as String)
             self.playerLayer?.videoGravity = self._resizeMode
             self.setNeedsLayout()
             print("CHANGED: resizeMode \(newValue)")
@@ -118,7 +118,7 @@ class RNVideoPlayer: RCTView {
                 let floatVal = convertedValue >= 0 ? convertedValue : self._playerStartTime
                 print("CHANGED: currentTime \(floatVal)")
                 if floatVal <= self._playerEndTime && floatVal >= self._playerStartTime {
-                    self.player.seek(to: convertToCMTime(val: floatVal), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+                  self.player.seek(to: convertToCMTime(val: floatVal), toleranceBefore: CMTime.zero, toleranceAfter: CMTime.zero)
                 }
             }
         }
@@ -292,17 +292,17 @@ class RNVideoPlayer: RCTView {
     }
     
     func toBase64(image: UIImage) -> String {
-        let imageData:NSData = UIImagePNGRepresentation(image)! as NSData
+      let imageData:NSData = image.pngData()! as NSData
         return imageData.base64EncodedString(options: .lineLength64Characters)
     }
     
     func convertToCMTime(val: CGFloat) -> CMTime {
-        return CMTimeMakeWithSeconds(Float64(val), Int32(NSEC_PER_SEC))
+      return CMTimeMakeWithSeconds(Float64(val), preferredTimescale: Int32(NSEC_PER_SEC))
     }
     
     func createPlayerObservers() -> Void {
         // TODO: clean obersable when View going to diesappear
-        let interval = CMTimeMakeWithSeconds(1.0, Int32(NSEC_PER_SEC))
+      let interval = CMTimeMakeWithSeconds(1.0, preferredTimescale: Int32(NSEC_PER_SEC))
         self.playerCurrentTimeObserver = self.player.addPeriodicTimeObserver(
             forInterval: interval,
             queue: nil,

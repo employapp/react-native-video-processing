@@ -9,20 +9,20 @@ import Foundation
 
 @objc(RNVideoProcessingManager)
 class RNVideoProcessingManager: RCTViewManager {
-
-   @objc override func view() -> UIView! {
-       return RNVideoPlayer()
-   }
-
+    
+    @objc override func view() -> UIView! {
+        return RNVideoPlayer()
+    }
+    
     @objc override func constantsToExport() -> [AnyHashable: Any] {
         return [
-            "ScaleNone": AVLayerVideoGravityResizeAspect,
-            "ScaleToFill": AVLayerVideoGravityResize,
-            "ScaleAspectFit": AVLayerVideoGravityResizeAspect,
-            "ScaleAspectFill": AVLayerVideoGravityResizeAspectFill
+            "ScaleNone": AVLayerVideoGravity.resizeAspect,
+            "ScaleToFill": AVLayerVideoGravity.resize,
+            "ScaleAspectFit": AVLayerVideoGravity.resizeAspect,
+            "ScaleAspectFill": AVLayerVideoGravity.resizeAspectFill
         ]
     }
-
+    
     override class func requiresMainQueueSetup() -> Bool {
         return true
     }
