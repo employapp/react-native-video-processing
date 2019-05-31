@@ -131,19 +131,19 @@ class RNVideoTrimmer: NSObject {
 
 
     switch videoOrientation {
-    case UIImageOrientation.up:
+    case UIImage.Orientation.up:
       t1 = CGAffineTransform(translationX: clipVideoTrack.naturalSize.height - cropOffsetX, y: 0 - cropOffsetY );
       t2 = t1.rotated(by: CGFloat(Double.pi / 2) );
       break;
-    case UIImageOrientation.left:
+    case UIImage.Orientation.left:
       t1 = CGAffineTransform(translationX: clipVideoTrack.naturalSize.width - cropOffsetX, y: clipVideoTrack.naturalSize.height - cropOffsetY );
       t2 = t1.rotated(by: CGFloat(Double.pi)  );
       break;
-    case UIImageOrientation.right:
+    case UIImage.Orientation.right:
       t1 = CGAffineTransform(translationX: 0 - cropOffsetX, y: 0 - cropOffsetY );
       t2 = t1.rotated(by: 0);
       break;
-    case UIImageOrientation.down:
+    case UIImage.Orientation.down:
       t1 = CGAffineTransform(translationX: 0 - cropOffsetX, y: clipVideoTrack.naturalSize.width - cropOffsetY ); // not fixed width is the real height in upside down
       t2 = t1.rotated(by: -(CGFloat)(Double.pi / 2) );
       break;
